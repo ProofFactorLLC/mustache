@@ -45,7 +45,7 @@ EOF
     end
 
     # The sigil types which are valid after an opening `{{`
-    VALID_TYPES = [ '#', '^', '/', '=', '!', '<', '>', '&', '{' ].map(&:freeze)
+    VALID_TYPES = [ '#', '^', '/', '=', '!', '<', '>', '&', '{', '-' ].map(&:freeze)
 
     def self.valid_types
       @valid_types ||= Regexp.new(VALID_TYPES.map { |t| Regexp.escape(t) }.join('|') )
