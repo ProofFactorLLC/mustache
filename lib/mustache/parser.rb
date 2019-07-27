@@ -28,10 +28,10 @@ class Mustache
     # sort.
     class SyntaxError < StandardError
       def initialize(message, position)
-        @message = message
+        @message                   = message
         @lineno, @column, @line, _ = position
-        @stripped_line = @line.strip
-        @stripped_column = @column - (@line.size - @line.lstrip.size)
+        @stripped_line             = @line.strip
+        @stripped_column           = @column - (@line.size - @line.lstrip.size)
       end
 
       def to_s
@@ -40,15 +40,15 @@ class Mustache
   Line #{@lineno}
     #{@stripped_line}
     #{' ' * @stripped_column}^
-EOF
+        EOF
       end
     end
 
     # The sigil types which are valid after an opening `{{`
-    VALID_TYPES = [ '#', '^', '/', '=', '!', '<', '>', '&', '{' ].map(&:freeze)
+    VALID_TYPES = ['#', '^', '/', '=', '!', '<', '>', '&', '{'].map(&:freeze)
 
     def self.valid_types
-      @valid_types ||= Regexp.new(VALID_TYPES.map { |t| Regexp.escape(t) }.join('|') )
+      @valid_types ||= Regexp.new(VALID_TYPES.map { |t| Regexp.escape(t) }.join('|'))
     end
 
     # Add a supported sigil type (with optional aliases) to the Parser.
@@ -63,9 +63,9 @@ EOF
     # The provided block will be evaluated against the current instance of
     # Parser, and may append to the Parser's @result as needed.
     def self.add_type(*types, &block)
-      types = types.map(&:to_s)
+      types          = types.map(&:to_s)
       type, *aliases = types
-      method_name = "scan_tag_#{type}".to_sym
+      method_name    = "scan_tag_#{type}".to_sym
       define_method(method_name, &block)
       aliases.each { |a| alias_method "scan_tag_#{a}", method_name }
       types.each { |t| VALID_TYPES << t unless VALID_TYPES.include?(t) }
@@ -75,21 +75,21 @@ EOF
     # After these types of tags, all whitespace until the end of the line will
     # be skipped if they are the first (and only) non-whitespace content on
     # the line.
-    SKIP_WHITESPACE = [ '#', '^', '/', '<', '>', '=', '!' ].map(&:freeze)
+    SKIP_WHITESPACE = ['#', '^', '/', '<', '>', '=', '!'].map(&:freeze)
 
     # The content allowed in a tag name.
-    ALLOWED_CONTENT = /(\w|[?!\/.-\[\]])*/
+    ALLOWED_CONTENT = /(\w|[?!\/.-\[\]\-])*/
 
     # These types of tags allow any content,
     # the rest only allow ALLOWED_CONTENT.
-    ANY_CONTENT = [ '!', '=' ].map(&:freeze)
+    ANY_CONTENT = ['!', '='].map(&:freeze)
 
     attr_reader :otag, :ctag
 
     # Accepts an options hash which does nothing but may be used in
     # the future.
     def initialize(options = {})
-      @options = options
+      @options                                = options
       @option_inline_partials_at_compile_time = options[:inline_partials_at_compile_time]
       if @option_inline_partials_at_compile_time
         @partial_resolver = options[:partial_resolver]
@@ -103,16 +103,16 @@ EOF
 
     # The opening tag delimiter. This may be changed at runtime.
     def otag=(value)
-      regex = regexp value
+      regex           = regexp value
       @otag_regex     = /([ \t]*)?#{regex}/
       @otag_not_regex = /(^[ \t]*)?#{regex}/
-      @otag = value
+      @otag           = value
     end
 
     # The closing tag delimiter. This too may be changed at runtime.
     def ctag=(value)
       @ctag_regex = regexp value
-      @ctag = value
+      @ctag       = value
     end
 
     # Given a string template, returns an array of tokens.
@@ -121,13 +121,13 @@ EOF
 
       if template.respond_to?(:encoding)
         @encoding = template.encoding
-        template = template.dup.force_encoding("BINARY")
+        template  = template.dup.force_encoding("BINARY")
       end
 
       # Keeps information about opened sections.
       @sections = []
-      @result = [:multi]
-      @scanner = StringScanner.new(template)
+      @result   = [:multi]
+      @scanner  = StringScanner.new(template)
 
       # Scan until the end of the template.
       until @scanner.eos?
@@ -167,9 +167,9 @@ EOF
     # Find {{mustaches}} and add them to the @result array.
     def scan_tags
       # Scan until we hit an opening delimiter.
-      start_of_line = @scanner.beginning_of_line?
+      start_of_line      = @scanner.beginning_of_line?
       pre_match_position = @scanner.pos
-      last_index = @result.length
+      last_index         = @result.length
 
       return unless @scanner.scan @otag_regex
       padding = @scanner[1] || ''
@@ -179,13 +179,13 @@ EOF
       unless start_of_line
         @result << [:static, padding] unless padding.empty?
         pre_match_position += padding.length
-        padding = ''
+        padding            = ''
       end
 
       # Since {{= rewrites ctag, we store the ctag which should be used
       # when parsing this specific tag.
       current_ctag_regex = @ctag_regex
-      type = @scanner.scan(self.class.valid_types)
+      type               = @scanner.scan(self.class.valid_types)
       @scanner.skip(/\s*/)
 
       # ANY_CONTENT tags allow any character inside of them, while
@@ -196,7 +196,7 @@ EOF
       error "Illegal content in tag" if content.empty?
 
       fetch = [:mustache, :fetch, content.split('.')]
-      prev = @result
+      prev  = @result
 
       dispatch_based_on_type(type, content, fetch, padding, pre_match_position)
 
@@ -252,7 +252,7 @@ EOF
       pos = @scanner.pos
       if @scanner.scan_until(regexp)
         @scanner.pos -= @scanner.matched.size
-        @scanner.pre_match[pos..-1]
+        @scanner.pre_match[pos .. -1]
       end
     end
 
@@ -266,11 +266,11 @@ EOF
       rest = @scanner.check_until(/\n|\Z/).to_s.chomp
 
       # What we have parsed so far
-      parsed = @scanner.string[0...@scanner.pos]
+      parsed = @scanner.string[0 ... @scanner.pos]
 
       lines = parsed.split("\n")
 
-      [ lines.size, lines.last.size - 1, lines.last + rest ]
+      [lines.size, lines.last.size - 1, lines.last + rest]
     end
 
     # Used to quickly convert a string into a regular expression
@@ -309,6 +309,7 @@ EOF
       @sections << [content, position, @result]
       @result = block
     end
+
     alias_method :'scan_tag_#', :scan_tag_block
 
 
@@ -318,6 +319,7 @@ EOF
       @sections << [content, position, @result]
       @result = block
     end
+
     alias_method :'scan_tag_^', :scan_tag_inverted
 
 
@@ -327,36 +329,40 @@ EOF
         error "Closing unopened #{content.inspect}"
       end
 
-      raw = @scanner.pre_match[pos[3]...pre_match_position] + padding
+      raw = @scanner.pre_match[pos[3] ... pre_match_position] + padding
       (@result = result).last << raw << [self.otag, self.ctag]
 
       if section != content
         error "Unclosed section #{section.inspect}", pos
       end
     end
+
     alias_method :'scan_tag_/', :scan_tag_close
 
 
     def scan_tag_comment content, fetch, padding, pre_match_position
     end
+
     alias_method :'scan_tag_!', :scan_tag_comment
 
 
     def scan_tag_delimiter content, fetch, padding, pre_match_position
       self.otag, self.ctag = content.split(' ', 2)
     end
+
     alias_method :'scan_tag_=', :scan_tag_delimiter
 
 
     def scan_tag_open_partial content, fetch, padding, pre_match_position
       @result << if @option_inline_partials_at_compile_time
-        partial = @partial_resolver.call content
-        partial.gsub!(/^/, padding) unless padding.empty?
-        self.class.new(@options).compile partial
-      else
-        [:mustache, :partial, content, offset, padding]
-      end
+                   partial = @partial_resolver.call content
+                   partial.gsub!(/^/, padding) unless padding.empty?
+                   self.class.new(@options).compile partial
+                 else
+                   [:mustache, :partial, content, offset, padding]
+                 end
     end
+
     alias_method :'scan_tag_<', :scan_tag_open_partial
     alias_method :'scan_tag_>', :scan_tag_open_partial
 
@@ -364,6 +370,7 @@ EOF
     def scan_tag_unescaped content, fetch, padding, pre_match_position
       @result << [:mustache, :utag, fetch, offset]
     end
+
     alias_method :'scan_tag_{', :'scan_tag_unescaped'
     alias_method :'scan_tag_&', :'scan_tag_unescaped'
 
